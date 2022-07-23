@@ -3,6 +3,10 @@ const { validateUrl } = require('../services/utilities.service')
 const path = require('path');
 
 async function downloadFromSingleURL(body) {
+    // Validate the URL
+    if (!validateUrl(body.url)) {
+        return { state: false, message: 'Invalid URL' }
+    }
     let retryCount = body.retries || 1;
     const protocol = body.url.split("://")[0]
     const fileName = path.basename(body.url)
@@ -20,22 +24,20 @@ async function downloadFromSingleURL(body) {
             const result = await downloadFileAsPerProtocol(protocol, payload)
             if (result.state) return result
         }
-        throw new Error(response)
+        return { state: false, message: 'Something went wrong!' }
     }
     console.log(response.message)
     return response
 }
 
-function downloadFromMultipleURL(body) {
+async function downloadFromMultipleURL(body) {
+    const result = []
     for (let i = 0; i < body.url.length; i++) {
         const url = body.url[i]
-        // Validate the URL
-        if (!validateUrl(url)) {
-            console.log("Invalid URL!")
-            continue
-        }
-        downloadFromSingleURL({ ...body, url })
+        let res = await downloadFromSingleURL({ ...body, url })
+        result.push(res)
     }
+    return result
 }
 
 async function downloadFileAsPerProtocol(protocol, payload) {
@@ -51,7 +53,7 @@ async function downloadFileAsPerProtocol(protocol, payload) {
         }
     } catch (error) {
         response.state = false
-        response.message = error.message
+        response.message = "Download failed"
         return response
     }
 }

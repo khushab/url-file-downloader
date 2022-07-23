@@ -33,7 +33,9 @@ async function downloadFileForHTTPS(payload) {
 async function saveFileOnDisk(res, payload) {
     const response = {}
     try {
-        const fileStream = fs.createWriteStream(payload.fileName)
+        const location = payload.location ? payload.location + '/' + payload.fileName : payload.fileName
+        console.log(location, "location")
+        const fileStream = fs.createWriteStream(location)
         await res.pipe(fileStream)
 
         await new Promise(function (resolve, reject) {
