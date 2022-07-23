@@ -2,57 +2,60 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 
-
-const { validateUrl } = require('./utilities.service')
-
 // For downloading files from HTTP
-function downloadFileForHTTP(payload) {
-    try {
-        // Validate the URL
-        if (!validateUrl(payload.url)) {
-            throw new Error('Invalid URL')
-        }
-        http.get(payload.url, function (res) {
-            saveFileOnDisk(res, payload)
+async function downloadFileForHTTP(payload) {
+    let response
+    await new Promise(function (resolve, reject) {
+        http.get(payload.url, async function (res) {
+            response = await saveFileOnDisk(res, payload)
+            if (response.state) resolve()
+            else reject()
         })
-    } catch (error) {
-        throw new Error('Something went wrong!')
-    }
+    })
+    return response
 
 }
 
 // For downloading files from HTTPS
-function downloadFileForHTTPS(payload) {
-    try {
-        // Validate the URL
-        if (!validateUrl(payload.url)) {
-            throw new Error('Invalid URL')
-        }
-        https.get(payload.url, function (res) {
-            saveFileOnDisk(res, payload)
+async function downloadFileForHTTPS(payload) {
+    let response
+    await new Promise(function (resolve, reject) {
+        https.get(payload.url, async function (res) {
+            response = await saveFileOnDisk(res, payload)
+            if (response.state) resolve()
+            else reject()
         })
-    } catch (error) {
-        throw new Error('Something went wrong!')
-    }
+    })
+    return response
 }
 
 // For downloading and saving the file locally
-function saveFileOnDisk(res, payload) {
+async function saveFileOnDisk(res, payload) {
+    const response = {}
     try {
         const fileStream = fs.createWriteStream(payload.fileName)
-        res.pipe(fileStream)
+        await res.pipe(fileStream)
 
-        // On error
-        fileStream.on('error', function (err) {
-            throw new Error("Error Writing to the stream")
+        await new Promise(function (resolve, reject) {
+            // On finish
+            fileStream.on('finish', function () {
+                fileStream.close()
+                response.state = true
+                response.message = `${payload.fileName} downloaded successfully!!`
+                resolve()
+            })
+            // On error
+            fileStream.on('error', function (err) {
+                response.state = false
+                response.message = `${payload.fileName} download failed!!`
+                reject()
+            })
         })
-        // On finish
-        fileStream.on('finish', function () {
-            fileStream.close()
-            console.log("File downloaded!!")
-        })
-    } catch (error) {
-        throw new Error('Something went wrong!')
+        return response
+    } catch (err) {
+        response.state = false
+        response.message = `${payload.fileName} download failed!!`
+        return { ...response, ...err }
     }
 }
 

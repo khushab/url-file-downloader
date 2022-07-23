@@ -1,53 +1,59 @@
 const { downloadFileForHTTP, downloadFileForHTTPS } = require('../services/fileDownloader.service')
+const { validateUrl } = require('../services/utilities.service')
 const path = require('path');
 
-function downloadFromSingleURL(body) {
+async function downloadFromSingleURL(body) {
     let retryCount = body.retries || 1;
     const protocol = body.url.split("://")[0]
     const fileName = path.basename(body.url)
     const payload = {
+        ...body,
         url: body.url,
         fileName
     }
-    const response = downloadFileAsPerProtocol(protocol, payload)
+    const response = await downloadFileAsPerProtocol(protocol, payload)
     if (!response.state) {
-        if (retryCount !== 0) {
+        while (retryCount !== 0) {
             console.log("Download failed!")
             console.log("Retrying...")
             retryCount -= 1
-            downloadFileAsPerProtocol(protocol, payload)
+            const result = await downloadFileAsPerProtocol(protocol, payload)
+            if (result.state) return result
         }
-        else {
-            throw new Error(error)
-        }
+        throw new Error(response)
     }
+    console.log(response.message)
+    return response
 }
 
 function downloadFromMultipleURL(body) {
-    body.url.forEach((item) => {
-        downloadFromSingleURL({ ...body, url: item })
-    })
+    for (let i = 0; i < body.url.length; i++) {
+        const url = body.url[i]
+        // Validate the URL
+        if (!validateUrl(url)) {
+            console.log("Invalid URL!")
+            continue
+        }
+        downloadFromSingleURL({ ...body, url })
+    }
 }
 
-function downloadFileAsPerProtocol(protocol, payload) {
+async function downloadFileAsPerProtocol(protocol, payload) {
     const response = {}
     try {
         switch (protocol) {
             case 'http':
-                downloadFileForHTTP(payload)
-                break;
+                return await downloadFileForHTTP(payload)
             case 'https':
-                downloadFileForHTTPS(payload)
-                break;
+                return await downloadFileForHTTPS(payload)
             default:
-                downloadFileForHTTPS(payload)
-                break;
+                return await downloadFileForHTTPS(payload)
         }
-        response.state = true
     } catch (error) {
         response.state = false
+        response.message = error.message
+        return response
     }
-    return response
 }
 
 module.exports = { downloadFromSingleURL, downloadFromMultipleURL }
