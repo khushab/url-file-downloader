@@ -81,3 +81,12 @@ test('Calling download function with an invalid download location', async () => 
     expect(result.state).toBe(false)
     expect(result.message).toBe('Invalid download location')
 })
+
+test('Calling download function with a config object for FTP', async () => {
+    const payload = {
+        url: 'ftp://abc.example.com',
+    }
+    const result = await fileDownloader(payload)
+    expect(result.state).toBe(false)
+    expect(result.message).toBe('Please provide configration for connection')
+})
