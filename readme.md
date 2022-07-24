@@ -11,9 +11,12 @@
 
 ### Repository structure
 
--   `index.js`: Starting of the repository
--   `controller`: Directory containing all the controller functions inside
--   `services`: Directory containing all the service functions inside
+-   `src`: This is wher the main source code is
+-   `src/index.js`: Starting of the repository
+-   `src/controller`: Directory containing all the controller functions inside
+-   `src/services`: Directory containing all the service functions inside
+-   `src/tests`: Directory containing all the tests functions inside
+-   `.gitignore`: File for adding the files that is to be ignored by GIT.
 
 ### Working
 
