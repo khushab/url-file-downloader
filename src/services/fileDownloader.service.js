@@ -1,5 +1,6 @@
 const http = require('http');
 const https = require('https');
+const ftp = require("basic-ftp");
 const fs = require('fs');
 
 // For downloading files from HTTP
@@ -34,7 +35,6 @@ async function saveFileOnDisk(res, payload) {
     const response = {}
     try {
         const location = payload.location ? payload.location + '/' + payload.fileName : payload.fileName
-        console.log(location, "location")
         const fileStream = fs.createWriteStream(location)
         await res.pipe(fileStream)
 
@@ -49,16 +49,43 @@ async function saveFileOnDisk(res, payload) {
             // On error
             fileStream.on('error', function (err) {
                 response.state = false
-                response.message = `${payload.fileName} download failed!!`
+                response.message = `Download failed!!`
                 reject()
             })
         })
         return response
     } catch (err) {
         response.state = false
-        response.message = `${payload.fileName} download failed!!`
+        response.message = `Download failed!!`
         return { ...response, ...err }
     }
 }
 
-module.exports = { downloadFileForHTTP, downloadFileForHTTPS }
+// For downloading from FTP/SFTP 
+async function downloadFileForFTP(payload) {
+    const client = new ftp.Client()
+    client.ftp.verbose = true
+    let response
+    try {
+        const location = payload.location || __dirname
+        // setting up the FTP/SFTP connection
+        await client.access({
+            host: payload.url,
+            usename: payload.config.username || '',
+            password: payload.config.password || '',
+            port: payload.config.port || 22,
+            ...payload.config
+        })
+        await client.downloadTo(location, payload.config.remoteLocation);
+        response.state = false
+        response.message = `Download failed!!`
+    }
+    catch (err) {
+        response.state = false
+        response.message = `Download failed!!`
+    }
+    client.close()
+    return response
+
+}
+module.exports = { downloadFileForHTTP, downloadFileForHTTPS, downloadFileForFTP }

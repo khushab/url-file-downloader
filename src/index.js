@@ -1,6 +1,18 @@
 const { downloadFromSingleURL, downloadFromMultipleURL } = require('./controller/fileDownloader.controller')
 
-
+/**
+ * Params: 
+ * {
+ *      url: // can be either a URL or an array of URLs,
+ *      retries: // Number of times of retries, default is 1
+ *      location: // Location where the file should be downloaded, default is current directory
+ *      config: {
+ *          username: // this is optional, default is '',
+ *          password: // this is optional, default is ''
+ *          port: // this is optional, default is 22,
+ *     } // should contain the config for FTP/SFTP connection
+ * }
+ */
 async function fileDownloader(body) {
     let response
     if (Array.isArray(body.url)) {
@@ -8,6 +20,7 @@ async function fileDownloader(body) {
     } else {
         response = await downloadFromSingleURL(body)
     }
+    console.log(response)
     return response
 }
 
@@ -20,10 +33,8 @@ const url2 = "https://images.pexels.com/photos/12270237/pexels-photo-12270237.jp
 const body = {
     url: [url0, url2, url1, ''],
     retries: 2,
-    // location: '/Users/khushab/url-file-downloader/downloads'
     location: '/Usfnsdj'
 }
-const body2 = { url: url1 }
 
 fileDownloader(body)
 
