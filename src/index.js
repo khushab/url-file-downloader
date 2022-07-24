@@ -20,7 +20,6 @@ async function fileDownloader(body) {
     } else {
         response = await downloadFromSingleURL(body)
     }
-    console.log(response)
     return response
 }
 
