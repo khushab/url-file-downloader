@@ -1,5 +1,5 @@
 const { downloadFileForHTTP, downloadFileForHTTPS } = require('../services/fileDownloader.service')
-const { validateUrl } = require('../services/utilities.service')
+const { validateUrl, validateDirectoryPath } = require('../services/utilities.service')
 const path = require('path');
 
 async function downloadFromSingleURL(body) {
@@ -26,11 +26,14 @@ async function downloadFromSingleURL(body) {
         }
         return { state: false, message: 'Something went wrong!' }
     }
-    console.log(response.message)
     return response
 }
 
 async function downloadFromMultipleURL(body) {
+    // Validate the download location
+    if (body.location && !validateDirectoryPath(body.location)) {
+        return { state: false, message: 'Invalid download location' }
+    }
     const result = []
     for (let i = 0; i < body.url.length; i++) {
         const url = body.url[i]
