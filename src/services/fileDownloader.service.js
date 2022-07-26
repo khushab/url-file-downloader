@@ -2,7 +2,7 @@ const http = require('http');
 const https = require('https');
 const ftp = require("basic-ftp");
 const fs = require('fs');
-const { removeFileFromPath } = require('./utilities.service')
+const { removeFileFromPath, createNewNameIfFileAlreadyExits } = require('./utilities.service')
 
 // For downloading files from HTTP
 async function downloadFileForHTTP(payload) {
@@ -35,6 +35,7 @@ async function downloadFileForHTTPS(payload) {
 async function saveFileOnDisk(res, payload) {
     const response = {}
     const location = payload.location ? payload.location + '/' + payload.fileName : payload.fileName
+    location = createNewNameIfFileAlreadyExits(location)
     try {
         const fileStream = fs.createWriteStream(location)
         await res.pipe(fileStream)

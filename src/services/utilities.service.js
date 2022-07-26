@@ -23,5 +23,14 @@ function removeFileFromPath(path) {
     fs.unlinkSync(path)
 }
 
+// Check if file already exists and return a new name
+function createNewNameIfFileAlreadyExits(path) {
+    if (fs.existsSync(path)) {
+        const arr = path.split('.')
+        arr[arr.length - 2] += '1'
+        return arr.join('.')
+    }
+    return path
+}
 
-module.exports = { validateUrl, validateDirectoryPath, removeFileFromPath }
+module.exports = { validateUrl, validateDirectoryPath, removeFileFromPath, createNewNameIfFileAlreadyExits }
