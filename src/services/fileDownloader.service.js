@@ -2,6 +2,7 @@ const http = require('http');
 const https = require('https');
 const ftp = require("basic-ftp");
 const fs = require('fs');
+const { removeFileFromPath } = require('./utilities.service')
 
 // For downloading files from HTTP
 async function downloadFileForHTTP(payload) {
@@ -33,8 +34,8 @@ async function downloadFileForHTTPS(payload) {
 // For downloading and saving the file locally
 async function saveFileOnDisk(res, payload) {
     const response = {}
+    const location = payload.location ? payload.location + '/' + payload.fileName : payload.fileName
     try {
-        const location = payload.location ? payload.location + '/' + payload.fileName : payload.fileName
         const fileStream = fs.createWriteStream(location)
         await res.pipe(fileStream)
 
@@ -50,6 +51,8 @@ async function saveFileOnDisk(res, payload) {
             fileStream.on('error', function (err) {
                 response.state = false
                 response.message = `Download failed!!`
+                // Delete the file if download fails
+                removeFileFromPath(location)
                 reject()
             })
         })
@@ -57,6 +60,8 @@ async function saveFileOnDisk(res, payload) {
     } catch (err) {
         response.state = false
         response.message = `Download failed!!`
+        // Delete the file if download fails
+        removeFileFromPath(location)
         return { ...response, ...err }
     }
 }
@@ -66,8 +71,8 @@ async function downloadFileForFTP(payload) {
     const client = new ftp.Client()
     client.ftp.verbose = true
     let response
+    const location = payload.location || __dirname
     try {
-        const location = payload.location || __dirname
         // setting up the FTP/SFTP connection
         await client.access({
             host: payload.url,
@@ -77,10 +82,12 @@ async function downloadFileForFTP(payload) {
             ...payload.config
         })
         await client.downloadTo(location, payload.config.remoteLocation);
-        response.state = false
-        response.message = `Download failed!!`
+        response.state = true
+        response.message = 'downloaded successfully!!'
     }
     catch (err) {
+        // Delete the file if download fails
+        removeFileFromPath(location)
         response.state = false
         response.message = `Download failed!!`
     }
